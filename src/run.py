@@ -158,30 +158,13 @@ class Run:
         Reprocess a block and its previous blocks.
         """
         try:
-            reprocess_block_height = 0
-            for index in range(
+            for reprocess_block_height in range(
                 block_height - self.default_block_confirmations, block_height
             ):
-                events = await self.data_processer.get_events_by_block_height(index)
-                if events is None:
-                    logger.error(
-                        f"Failed to get events by block height: {block_height}"
-                    )
+                if await self.redis_helper.is_block_rollback(reprocess_block_height):
                     self.stop_flag = True
-                    return
-
-                new_events = [
-                    event for event in events if event.error == self.event_default_error
-                ]
-
-                if len(new_events) > 0:
-                    reprocess_block_height = index
                     break
 
-            if reprocess_block_height == 0:
-                return
-
-            self.stop_flag = True
             return True
 
         except Exception as e:
