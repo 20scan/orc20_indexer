@@ -28,6 +28,7 @@ class RedisHelper:
         self.redis = aioredis.Redis(connection_pool=self.pool, health_check_interval=30)
 
         self.redis_key_current_block = "current_block"
+        self.redis_key_block_rollback = "block_rollback"
 
     async def close(self):
         """
@@ -52,5 +53,14 @@ class RedisHelper:
                 error = (
                     f"RedisHelper::get_current_block: Failed to get current block {e}"
                 )
+                logger.error(error)
+                raise Exception(error)
+
+    async def is_block_rollback(self, block: int):
+        async with self.semaphore:
+            try:
+                return await self.redis.hexists(self.redis_key_block_rollback, block)
+            except Exception as e:
+                error = f"RedisHelper::is_block_rollback: Failed to check if block is rollback {e}"
                 logger.error(error)
                 raise Exception(error)
